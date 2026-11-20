@@ -1,0 +1,89 @@
+# Docker LAMP + phpMyAdmin for Little Grandmaster.
+#
+# Front door (via the shared Traefik edge router and mkcert TLS):
+#   https://chesstutorstarter.test          -> this app (Apache + PHP)
+#   https://pma.chesstutorstarter.test      -> phpMyAdmin
+# Direct access without Traefik: http://localhost:8083
+#
+# NOTE: `chesstutor-db` (container name) is used as the MySQL hostname because
+# several LAMP stacks share the external `traefik` network and the service
+# alias `mysql` is ambiguous across stacks.
+
+services:
+  apache:
+    build: .
+    container_name: chesstutor-web
+    restart: unless-stopped
+    networks:
+      - traefik
+    ports:
+      - "8083:80"
+    environment:
+      - APP_ENV=development
+      - MYSQL_HOST=${MYSQL_HOST:-chesstutor-db}
+      - MYSQL_USER=${MYSQL_USER:-chesstutor}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-chesstutorpass}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-chesstutordb}
+      # Optional: export these to override config/config.php values.
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - OPENROUTER_MODEL=${OPENROUTER_MODEL:-}
+    volumes:
+      - .:/var/www/html
+      - ./apache.conf:/etc/apache2/sites-enabled/000-default.conf:ro
+    depends_on:
+      mysql:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.chesstutor.rule=Host(`chesstutorstarter.test`)"
+      - "traefik.http.routers.chesstutor.entrypoints=websecure"
+      - "traefik.http.routers.chesstutor.tls=true"
+      - "traefik.http.services.chesstutor.loadbalancer.server.port=80"
+
+  mysql:
+    image: mysql:8.0
+    container_name: chesstutor-db
+    restart: unless-stopped
+    networks:
+      - traefik
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpass}
+      MYSQL_USER: ${MYSQL_USER:-chesstutor}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-chesstutorpass}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-chesstutordb}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: chesstutor-pma
+    restart: unless-stopped
+    networks:
+      - traefik
+    environment:
+      PMA_HOST: chesstutor-db
+      PMA_USER: ${MYSQL_USER:-chesstutor}
+      PMA_PASSWORD: ${MYSQL_PASSWORD:-chesstutorpass}
+      PMA_DATABASE: ${MYSQL_DATABASE:-chesstutordb}
+      UPLOAD_LIMIT: 64M
+    depends_on:
+      mysql:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.chesstutorpma.rule=Host(`pma.chesstutorstarter.test`)"
+      - "traefik.http.routers.chesstutorpma.entrypoints=websecure"
+      - "traefik.http.routers.chesstutorpma.tls=true"
+      - "traefik.http.services.chesstutorpma.loadbalancer.server.port=80"
+
+networks:
+  traefik:
+    external: true
+
+volumes:
+  mysql_data:

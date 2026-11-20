@@ -1,0 +1,14 @@
+# Dependencies kept local only; browser assets in public/vendor/ are committed
+# so that `git push` deploys to shared hosting work without npm on the server.
+node_modules/
+
+# Real environment files (never tracked). Copy from config/config.php.example
+# (preferred) or the legacy config/.env.example.
+config/config.php
+config/.env
+
+# Windows unzip artifacts
+*Zone.Identifier
+
+.DS_Store
+*.log

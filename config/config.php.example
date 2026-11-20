@@ -1,0 +1,34 @@
+<?php
+// Little Grandmaster environment configuration — SAMPLE.
+//
+// Copy this file to config/config.php and fill in real values.
+// config/config.php is ignored by git and is the environment file that
+// production servers are expected to provide. Keep all credentials outside
+// public/. Environment variables (OPENROUTER_API_KEY, OPENROUTER_MODEL,
+// MYSQL_HOST, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DATABASE, APP_ENV) override
+// the values in this file when set.
+
+return [
+    'app' => [
+        // 'development' or 'production'
+        'env' => 'production',
+    ],
+
+    'openrouter' => [
+        // Optional in Stage 0: without a key the tutor endpoint returns a
+        // setup message and everything else keeps working.
+        'api_key' => '',
+        // A model identifier from https://openrouter.ai/models
+        'model' => '',
+    ],
+
+    // Reserved for future milestones (Stage 0 does not use a database yet).
+    'db' => [
+        // Shared hosting: usually 'localhost' plus your account's DB name/user.
+        'host' => 'localhost',
+        'port' => 3306,
+        'name' => 'example_chesstutor',
+        'user' => 'example_chesstutor',
+        'password' => '',
+    ],
+];

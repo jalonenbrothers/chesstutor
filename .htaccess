@@ -1,0 +1,18 @@
+# Little Grandmaster — repository root .htaccess
+#
+# The whole repository is deployed into the web root (e.g. public_html on
+# shared hosting). public/ is the only web-facing directory: every request
+# is routed through it below, keeping clean URLs (/, /css/app.css,
+# /api/tutor.php, ...). Works on Apache with mod_rewrite and AllowOverride.
+
+RewriteEngine On
+
+# Never serve dotfiles at any depth (.git, .env, .htaccess, ...).
+RewriteRule (^|/)\. - [F]
+
+# Block private project directories, even if routing were to change.
+RewriteRule ^(config|src|docs|tests|scripts|node_modules)(/|$) - [F,NC]
+
+# Serve everything from public/.
+RewriteCond %{REQUEST_URI} !^/public/
+RewriteRule ^(.*)$ public/$1 [L]
